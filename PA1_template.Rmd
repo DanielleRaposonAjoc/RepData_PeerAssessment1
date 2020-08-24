@@ -7,19 +7,78 @@ output:
 
 
 ## Loading and preprocessing the data
-
+Data is gathered from activity.csv and dplyr library is also imported
+```{r}
+library(dplyr)
+data <-read.csv("activity.csv")
+```
 
 
 ## What is mean total number of steps taken per day?
-
-
+Total number of steps per date is calculated
+```{r}
+steps_byDate<-summarise(group_by(data,date),steps=sum(steps))
+```
+Histogram is created from the total number of steps taken per day
+```{r}
+hist(steps_byDate$steps,xlab="steps",main="histogram of total number of steps per day")
+```
+```{r , echo=FALSE}
+mean<- mean(steps_byDate$steps,na.rm=TRUE)
+median<- median(steps_byDate$steps,na.rm=TRUE)
+```
+Mean is `r mean`  
+Median is `r median`
 
 ## What is the average daily activity pattern?
+Total number of steps per interval is calculated
+```{r}
+steps_byInterval<-summarise(group_by(data,interval),steps=mean(steps,na.rm=TRUE))
+```
+Plot is created from the total number of steps taken per interval
+```{r}
+with(steps_byInterval,plot(x=interval,y=steps,type="l"))
+```
+```{r , echo=FALSE}
+max<-subset(steps_byInterval,steps==max(steps),na.rm=TRUE)[,"interval"]
+```
+Max is `r max`  
 
 
 
 ## Imputing missing values
-
-
+```{r, echo=FALSE}
+missing_values<-sum(is.na(data))
+```
+There are `r missing_values` missing values  
+Missing values are replaced with the mean
+```{r}
+data[is.na(data)]<-mean
+steps_byDate1<-summarise(group_by(data,date),steps=sum(steps))
+head(steps_byDate1)
+```
+Histogram is created with the new data set with replaced missing values
+```{r }
+hist(steps_byDate1$steps,xlab="steps",main="histogram of total number of steps per day")
+```
+```{r , echo=FALSE}
+mean<- mean(steps_byDate1$steps)
+median<- median(steps_byDate1$steps)
+```
+Mean is `r mean`  
+Median is `r median` 
 
 ## Are there differences in activity patterns between weekdays and weekends?
+New column days is created that is of type factor and shows whether a date is a weekend or a weekday
+```{r }
+weekend<- c("Saturday","Sunday")
+data$days<-factor(weekdays(as.Date(data$date)) %in% weekend,levels=c(TRUE,FALSE),labels=c('weekend','weekday'))
+head(data)
+```
+Number of steps per interval for weekends and weekdays are plotted
+```{r }
+steps_byDay<-summarise(group_by(data,interval,days),steps=mean(steps))
+par(mfrow=c(1,2))
+with(steps_byDay[steps_byDay$days=="weekend",],plot(x=interval,y=steps,type="l",col="red",main="weekend"))
+with(steps_byDay[steps_byDay$days=="weekday",],plot(x=interval,y=steps,type="l",col="blue",main="weekday"))
+```
